@@ -9,7 +9,66 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Sriracha&family=Itim&display=swap" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&display=swap" rel="stylesheet"> 
+	<style>
+  /* Biar konten selalu responsif */
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Patrick Hand', cursive, sans-serif;
+    text-align: center;
+    background: #000;
+    color: #fff;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Biar teks nggak kepotong di HP */
+  p {
+    word-wrap: break-word;
+    padding: 0 10px;
+    font-size: 1.1em;
+  }
+
+  /* Tombol responsif */
+  button {
+    padding: 10px 20px;
+    font-size: 1em;
+    border-radius: 8px;
+    border: none;
+    background: pink;
+    color: #333;
+    cursor: pointer;
+  }
+
+  /* Container teks biar center */
+  .container {
+    max-width: 600px;
+    margin: auto;
+  }
+
+  /* Background gambar */
+  #bodyblur img {
+    object-fit: cover;
+    width: 100%;
+    height: 100vh;
+  }
+
+  /* Responsive font */
+  @media (max-width: 600px) {
+    p {
+      font-size: 1em;
+    }
+    label {
+      font-size: 14px !important;
+    }
+  }
+</style>
+
 	<script src="https://unpkg.com/typeit@8.7.0/dist/index.umd.js"></script><link rel="stylesheet" href="https://htmlku.com/karnakamu/style.css">
 </head>
 <body>
@@ -126,4 +185,5 @@ vtext_8_startfrom = 26800;
 </script>
 <script src="https://htmlku.com/karnakamu/script.js"></script>
 </body>
+
 </html>
