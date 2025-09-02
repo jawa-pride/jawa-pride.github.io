@@ -67,6 +67,26 @@
       font-size: 14px !important;
     }
   }
+			#envwrap, .reset {
+			  display: flex;
+			  justify-content: center;
+			  align-items: center;
+			  flex-direction: column;
+			}
+			
+			/* Biar surat ada di tengah layar */
+			.envlope-wrapper {
+			  display: flex;
+			  justify-content: center;
+			  align-items: center;
+			  min-height: 60vh; /* tinggi tengah layar */
+			  margin-top: 40px; /* jarak dari atas dikit */
+			}
+			
+			/* Tombol OPEN biar pas di bawah surat */
+			.reset {
+			  margin-top: 20px;
+			}
 </style>
 
 	<script src="https://unpkg.com/typeit@8.7.0/dist/index.umd.js"></script><link rel="stylesheet" href="https://htmlku.com/karnakamu/style.css">
@@ -90,36 +110,44 @@
 	
 	<!-- URL Aktif Audio -->
 	<audio src="https://htmlku.com/karnakamu/karnakamu.mp3" id="linkmp3"></audio>
+
 	
+		
+			
+				
 	<!-- Surat -->
-    <div id="envwrap" class="envlope-wrapper">
-        <div id="envelope" class="close">
-            <div class="wax-seal"></div>
-            <div class="front flap"></div>
-            <div class="front pocket"></div>
-            <div class="letter">
-                <div class="letter-corner corner-tl"></div>
-                <div class="letter-corner corner-br"></div>
-                <div class="message">
-                    <p>For You! 🩷</p>
-                    <p>......</p>
-                </div>
-            </div>
-            <div class="hearts">
-                <div class="heart a1"></div>
-                <div class="heart a2"></div>
-                <div class="heart a3"></div>
-            </div>
-            <div class="sparkles">
-                <div class="sparkle s1"></div>
-                <div class="sparkle s2"></div>
-                <div class="sparkle s3"></div>
-            </div>
-        </div>
+   <!-- Surat -->
+<div id="envwrap" class="envlope-wrapper">
+  <div id="envelope" class="close">
+    <div class="wax-seal"></div>
+    <div class="front flap"></div>
+    <div class="front pocket"></div>
+    <div class="letter">
+      <div class="letter-corner corner-tl"></div>
+      <div class="letter-corner corner-br"></div>
+      <div class="message">
+        <p>For You! 🩷</p>
+        <p>......</p>
+      </div>
     </div>
-    <div class="reset">
-        <button id="open">OPEN 🩷</button>
+    <div class="hearts">
+      <div class="heart a1"></div>
+      <div class="heart a2"></div>
+      <div class="heart a3"></div>
     </div>
+    <div class="sparkles">
+      <div class="sparkle s1"></div>
+      <div class="sparkle s2"></div>
+      <div class="sparkle s3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tombol OPEN -->
+<div class="reset">
+  <button id="open">OPEN 🩷</button>
+</div>
+
     
   <!-- URL Stiker -->
   <div class="stiker">
@@ -187,3 +215,4 @@ vtext_8_startfrom = 26800;
 </body>
 
 </html>
+
