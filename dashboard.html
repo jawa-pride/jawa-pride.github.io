@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ForexBot v3 — 4 Pair Live</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Bebas+Neue&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#020608;--surface:#07111a;--surface2:#0c1c2b;
+  --border:#0f2236;--border2:#1a3a56;
+  --accent:#00d4ff;--accent2:#ff6b00;
+  --green:#00ff88;--red:#ff1f4b;--yellow:#ffc940;--purple:#b16cff;
+  --muted:#2d5570;--text:#b8d4e8;--dim:#041018;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,212,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.03) 1px,transparent 1px);
+  background-size:50px 50px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,212,255,.008) 3px,rgba(0,212,255,.008) 4px);
+  pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:14px;}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;margin-bottom:14px;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-icon{width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.brand-name{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;color:var(--accent);}
+.brand-sub{font-size:.6rem;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.header-r{display:flex;align-items:center;gap:14px;}
+.ws-pill{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:100px;
+  background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.2);
+  font-size:.65rem;letter-spacing:2px;color:var(--green);}
+.ws-dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:blink 2s infinite;}
+.ws-dot.off{background:var(--red);box-shadow:0 0 8px var(--red);animation:none;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.upd-time{font-size:.6rem;color:var(--muted);}
+
+/* PAIR TABS */
+.pair-tabs{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.pair-tab{
+  flex:1;min-width:160px;
+  padding:14px 18px;border-radius:14px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--border);
+  transition:all .3s;position:relative;overflow:hidden;
+}
+.pair-tab:hover{border-color:var(--border2);}
+.pair-tab.active{border-color:var(--accent);background:rgba(0,212,255,.06);}
+.pair-tab.active::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);}
+.pair-tab.buy{border-color:rgba(0,255,136,.5);background:rgba(0,255,136,.04);}
+.pair-tab.buy::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);}
+.pair-tab.sell{border-color:rgba(255,31,75,.5);background:rgba(255,31,75,.04);}
+.pair-tab.sell::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--red);}
+.tab-pair{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;letter-spacing:.5px;}
+.tab-price{font-size:.8rem;font-weight:500;margin-top:4px;color:var(--accent);}
+.tab-sig{display:inline-block;font-size:.6rem;padding:2px 8px;border-radius:100px;margin-top:6px;font-weight:700;letter-spacing:1px;}
+.tab-sig.buy{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3);}
+.tab-sig.sell{background:rgba(255,31,75,.15);color:var(--red);border:1px solid rgba(255,31,75,.3);}
+.tab-sig.wait{background:rgba(255,201,64,.1);color:var(--yellow);}
+.tab-conf{font-size:.6rem;color:var(--muted);margin-top:4px;}
+
+/* PANEL */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* SIGNAL BANNER */
+.sig-banner{
+  padding:24px 28px;background:var(--surface);border:1px solid var(--border2);
+  border-radius:16px;margin-bottom:14px;
+  display:flex;align-items:center;gap:36px;
+  position:relative;overflow:hidden;transition:border-color .4s;
+}
+.sig-banner.buy{border-color:rgba(0,255,136,.5);}
+.sig-banner.buy::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--green);box-shadow:3px 0 20px var(--green);}
+.sig-banner.sell{border-color:rgba(255,31,75,.5);}
+.sig-banner.sell::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--red);box-shadow:3px 0 20px var(--red);}
+.sig-banner.wait::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--yellow);}
+.sig-main{flex-shrink:0;}
+.sig-lbl{font-size:.6rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+.sig-val{font-family:'Bebas Neue',sans-serif;font-size:4rem;letter-spacing:3px;line-height:1;transition:color .4s;}
+.sig-val.buy{color:var(--green);text-shadow:0 0 30px rgba(0,255,136,.4);}
+.sig-val.sell{color:var(--red);text-shadow:0 0 30px rgba(255,31,75,.4);}
+.sig-val.wait{color:var(--yellow);}
+.sig-sub{font-size:.7rem;color:var(--muted);margin-top:4px;letter-spacing:1px;}
+.sig-div{width:1px;height:70px;background:var(--border2);flex-shrink:0;}
+.sig-stats{display:flex;gap:28px;flex:1;flex-wrap:wrap;}
+.sig-st{}
+.sig-st-l{font-size:.55rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+.sig-st-v{font-size:1.2rem;font-weight:600;}
+.sig-st-v.entry{color:var(--accent);}
+.sig-st-v.tp{color:var(--green);}
+.sig-st-v.sl{color:var(--red);}
+.sig-st-v.rr{color:var(--yellow);}
+.sig-right{margin-left:auto;flex-shrink:0;}
+
+/* Confidence ring */
+.cring{width:100px;height:100px;position:relative;}
+.cring svg{transform:rotate(-90deg);}
+.cr-bg{fill:none;stroke:var(--border);stroke-width:7;}
+.cr-fill{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .8s ease,stroke .4s;}
+.cr-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.cr-pct{font-size:1.3rem;font-weight:700;}
+.cr-lbl{font-size:.5rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.score-row{margin-top:8px;width:100px;}
+.score-lbls{display:flex;justify-content:space-between;font-size:.55rem;margin-bottom:4px;}
+.score-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;display:flex;}
+.sb-buy{background:var(--green);height:100%;transition:width .6s;}
+.sb-sell{background:var(--red);height:100%;transition:width .6s;}
+
+/* GRID */
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;overflow:hidden;}
+.card:hover{border-color:var(--border2);}
+.c-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.c-title{font-size:.6rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.c-badge{font-size:.55rem;padding:3px 9px;border-radius:100px;background:rgba(0,212,255,.1);color:var(--accent);border:1px solid rgba(0,212,255,.25);}
+
+/* Indicator rows */
+.ind-list{display:flex;flex-direction:column;gap:8px;}
+.ind-row{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 11px;background:rgba(0,212,255,.025);border:1px solid var(--border);border-radius:9px;}
+.in-name{font-size:.68rem;color:var(--muted);min-width:80px;}
+.in-val{font-size:.82rem;font-weight:500;flex:1;text-align:center;}
+.in-sig{font-size:.55rem;padding:2px 9px;border-radius:100px;min-width:65px;text-align:center;font-weight:600;}
+.bull{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.2);}
+.bear{background:rgba(255,31,75,.1);color:var(--red);border:1px solid rgba(255,31,75,.2);}
+.neut{background:rgba(255,201,64,.1);color:var(--yellow);border:1px solid rgba(255,201,64,.2);}
+
+/* Chart */
+.chart-wrap{height:150px;position:relative;margin-top:4px;}
+canvas{display:block;width:100%;height:100%;}
+
+/* PA grid */
+.pa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pa-item{padding:10px;border-radius:9px;background:rgba(0,212,255,.025);border:1px solid var(--border);}
+.pa-l{font-size:.55rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.pa-v{font-size:.8rem;font-weight:500;}
+
+/* Macro */
+.macro-list{display:flex;flex-direction:column;gap:8px;}
+.macro-item{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;border-radius:9px;background:rgba(0,212,255,.025);border:1px solid var(--border);}
+.mac-info{}
+.mac-n{font-size:.68rem;color:var(--muted);}
+.mac-d{font-size:.55rem;color:var(--dim2,#1a4060);margin-top:2px;}
+.mac-v{font-size:.9rem;font-weight:600;}
+
+/* Reasons */
+.reasons{display:flex;flex-direction:column;gap:7px;max-height:320px;overflow-y:auto;}
+.reasons::-webkit-scrollbar{width:3px;}
+.reasons::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.reason{padding:9px 12px;border-radius:9px;font-size:.72rem;line-height:1.5;border-left:3px solid transparent;}
+.r-buy{background:rgba(0,255,136,.04);border-left-color:var(--green);}
+.r-sell{background:rgba(255,31,75,.04);border-left-color:var(--red);}
+.r-warn{background:rgba(255,201,64,.04);border-left-color:var(--yellow);}
+.r-wait{background:rgba(45,85,112,.15);border-left-color:var(--muted);}
+
+/* Risk */
+.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.risk-item{padding:11px;border-radius:9px;background:rgba(0,212,255,.025);border:1px solid var(--border);}
+.r-lbl{font-size:.55rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.r-val{font-size:.95rem;font-weight:600;}
+
+/* History */
+.hist-wrap{overflow-x:auto;margin-top:14px;}
+table{width:100%;border-collapse:collapse;font-size:.68rem;}
+thead th{padding:7px 10px;text-align:left;font-size:.55rem;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid rgba(15,34,54,.8);transition:background .15s;}
+tbody tr:hover{background:rgba(0,212,255,.025);}
+tbody td{padding:7px 10px;}
+.hbuy{color:var(--green);font-weight:700;}
+.hsell{color:var(--red);font-weight:700;}
+
+/* Log */
+.log-box{background:#010508;border:1px solid var(--border);border-radius:10px;
+  padding:12px;height:160px;overflow-y:auto;font-size:.65rem;line-height:1.9;}
+.log-box::-webkit-scrollbar{width:3px;}
+.log-box::-webkit-scrollbar-thumb{background:var(--border2);}
+.lts{color:var(--accent);}
+.lok{color:var(--green);}
+.lwarn{color:var(--yellow);}
+.lbuy{color:var(--green);font-weight:700;}
+.lsell{color:var(--red);font-weight:700;}
+
+/* Summary bar */
+.summary-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;
+}
+.sum-card{
+  padding:12px 16px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;transition:all .2s;
+}
+.sum-card:hover{border-color:var(--border2);}
+.sum-card.active{border-color:var(--accent);}
+.sum-left{}
+.sum-pair{font-size:.75rem;font-weight:600;letter-spacing:.5px;}
+.sum-price{font-size:.85rem;color:var(--accent);font-weight:500;margin-top:3px;}
+.sum-right{text-align:right;}
+.sum-sig{font-size:.95rem;font-weight:700;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;}
+.sum-sig.buy{color:var(--green);}
+.sum-sig.sell{color:var(--red);}
+.sum-sig.wait{color:var(--yellow);}
+.sum-conf{font-size:.6rem;color:var(--muted);margin-top:2px;}
+
+@media(max-width:1100px){.g3{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){.g3,.g2{grid-template-columns:1fr;}.sig-banner{flex-direction:column;}.sig-right{margin:0;}.summary-bar{grid-template-columns:1fr 1fr;}}
+
+@keyframes flashIn{0%{background:rgba(0,212,255,.12);}100%{background:transparent;}}
+.flash{animation:flashIn .8s ease;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<header>
+  <div class="brand">
+    <div class="brand-icon">⚡</div>
+    <div>
+      <div class="brand-name">ForexBot AI</div>
+      <div class="brand-sub">Multi-Pair Live Dashboard v3.0</div>
+    </div>
+  </div>
+  <div class="header-r">
+    <div class="upd-time" id="updTime">Menunggu data...</div>
+    <div class="ws-pill">
+      <div class="ws-dot off" id="wsDot"></div>
+      <span id="wsLbl">CONNECTING</span>
+    </div>
+  </div>
+</header>
+
+<!-- SUMMARY BAR (klik untuk ganti tab) -->
+<div class="summary-bar">
+  <div class="sum-card active" id="tab-EURUSD" onclick="switchPair('EURUSD')">
+    <div class="sum-left">
+      <div class="sum-pair">EUR/USD</div>
+      <div class="sum-price" id="sp-EURUSD">—</div>
+    </div>
+    <div class="sum-right">
+      <div class="sum-sig wait" id="ss-EURUSD">WAIT</div>
+      <div class="sum-conf" id="sc-EURUSD">—</div>
+    </div>
+  </div>
+  <div class="sum-card" id="tab-GBPUSD" onclick="switchPair('GBPUSD')">
+    <div class="sum-left">
+      <div class="sum-pair">GBP/USD</div>
+      <div class="sum-price" id="sp-GBPUSD">—</div>
+    </div>
+    <div class="sum-right">
+      <div class="sum-sig wait" id="ss-GBPUSD">WAIT</div>
+      <div class="sum-conf" id="sc-GBPUSD">—</div>
+    </div>
+  </div>
+  <div class="sum-card" id="tab-USDJPY" onclick="switchPair('USDJPY')">
+    <div class="sum-left">
+      <div class="sum-pair">USD/JPY</div>
+      <div class="sum-price" id="sp-USDJPY">—</div>
+    </div>
+    <div class="sum-right">
+      <div class="sum-sig wait" id="ss-USDJPY">WAIT</div>
+      <div class="sum-conf" id="sc-USDJPY">—</div>
+    </div>
+  </div>
+  <div class="sum-card" id="tab-XAUUSD" onclick="switchPair('XAUUSD')">
+    <div class="sum-left">
+      <div class="sum-pair">XAU/USD</div>
+      <div class="sum-price" id="sp-XAUUSD">—</div>
+    </div>
+    <div class="sum-right">
+      <div class="sum-sig wait" id="ss-XAUUSD">WAIT</div>
+      <div class="sum-conf" id="sc-XAUUSD">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- PANELS: satu per pair -->
+<div id="panels">
+
+<!-- Template panel, dipakai untuk EURUSD, GBPUSD, USDJPY, XAUUSD -->
+<!-- Panel EURUSD -->
+<div class="panel active" id="panel-EURUSD">
+  <div class="sig-banner wait" id="sb-EURUSD">
+    <div class="sig-main">
+      <div class="sig-lbl">Sinyal Aktif</div>
+      <div class="sig-val wait" id="sv-EURUSD">WAIT</div>
+      <div class="sig-sub" id="ssub-EURUSD">EUR/USD • M15</div>
+    </div>
+    <div class="sig-div"></div>
+    <div class="sig-stats">
+      <div class="sig-st"><div class="sig-st-l">Entry</div><div class="sig-st-v entry" id="se-EURUSD">—</div></div>
+      <div class="sig-st"><div class="sig-st-l">Take Profit</div><div class="sig-st-v tp" id="stp-EURUSD">—</div></div>
+      <div class="sig-st"><div class="sig-st-l">Stop Loss</div><div class="sig-st-v sl" id="ssl-EURUSD">—</div></div>
+      <div class="sig-st"><div class="sig-st-l">R:R Ratio</div><div class="sig-st-v rr" id="srr-EURUSD">—</div></div>
+    </div>
+    <div class="sig-right">
+      <div class="cring">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle class="cr-bg" cx="50" cy="50" r="42"/>
+          <circle class="cr-fill" id="cf-EURUSD" cx="50" cy="50" r="42" stroke="var(--accent)" stroke-dasharray="264" stroke-dashoffset="264"/>
+        </svg>
+        <div class="cr-num"><div class="cr-pct" id="cp-EURUSD">0%</div><div class="cr-lbl">Conf</div></div>
+      </div>
+      <div class="score-row">
+        <div class="score-lbls">
+          <span style="color:var(--green)" id="sbl-EURUSD">BUY 0</span>
+          <span style="color:var(--red)" id="sbs-EURUSD">SELL 0</span>
+        </div>
+        <div class="score-bar"><div class="sb-buy" id="sbb-EURUSD" style="width:50%"></div><div class="sb-sell" id="sbs2-EURUSD" style="width:50%"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="g3">
+    <div class="card">
+      <div class="c-head"><div class="c-title">Indikator Teknikal</div><div class="c-badge">LIVE</div></div>
+      <div class="ind-list">
+        <div class="ind-row"><div class="in-name">MA 50</div><div class="in-val" id="i-ma50-EURUSD">—</div><div class="in-sig neut" id="s-ma50-EURUSD">—</div></div>
+        <div class="ind-row"><div class="in-name">MA 200</div><div class="in-val" id="i-ma200-EURUSD">—</div><div class="in-sig neut" id="s-ma200-EURUSD">—</div></div>
+        <div class="ind-row"><div class="in-name">EMA 12</div><div class="in-val" id="i-ema12-EURUSD">—</div><div class="in-sig neut" id="s-ema12-EURUSD">—</div></div>
+        <div class="ind-row"><div class="in-name">EMA 26</div><div class="in-val" id="i-ema26-EURUSD">—</div><div class="in-sig neut" id="s-ema26-EURUSD">—</div></div>
+        <div class="ind-row"><div class="in-name">MACD Hist</div><div class="in-val" id="i-macd-EURUSD">—</div><div class="in-sig neut" id="s-macd-EURUSD">—</div></div>
+        <div class="ind-row"><div class="in-name">RSI (14)</div><div class="in-val" id="i-rsi-EURUSD">—</div><div class="in-sig neut" id="s-rsi-EURUSD">—</div></div>
+        <div class="ind-row"><div class="in-name">Stoch K/D</div><div class="in-val" id="i-stoch-EURUSD">—</div><div class="in-sig neut" id="s-stoch-EURUSD">—</div></div>
+        <div class="ind-row"><div class="in-name">ATR</div><div class="in-val" id="i-atr-EURUSD">—</div><div class="in-sig neut">Volatil</div></div>
+        <div class="ind-row"><div class="in-name">Volume</div><div class="in-val" id="i-vol-EURUSD">—</div><div class="in-sig neut" id="s-vol-EURUSD">—</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="c-head"><div class="c-title">Grafik Harga EUR/USD</div><div class="c-badge" id="lp-EURUSD">—</div></div>
+      <div class="chart-wrap"><canvas id="chart-EURUSD"></canvas></div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:.63rem;">
+        <span style="color:var(--red)">BB↑ <span id="bb-u-EURUSD">—</span></span>
+        <span style="color:var(--muted)">Mid <span id="bb-m-EURUSD">—</span></span>
+        <span style="color:var(--green)">BB↓ <span id="bb-l-EURUSD">—</span></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="c-head"><div class="c-title">Price Action</div></div>
+      <div class="pa-grid">
+        <div class="pa-item"><div class="pa-l">Pola Candle</div><div class="pa-v" id="pa-pat-EURUSD">—</div></div>
+        <div class="pa-item"><div class="pa-l">Trend</div><div class="pa-v" id="pa-trend-EURUSD">—</div></div>
+        <div class="pa-item"><div class="pa-l">Support</div><div class="pa-v" style="color:var(--green)" id="pa-sup-EURUSD">—</div></div>
+        <div class="pa-item"><div class="pa-l">Resistance</div><div class="pa-v" style="color:var(--red)" id="pa-res-EURUSD">—</div></div>
+      </div>
+      <div style="margin-top:14px;"><div class="c-title" style="margin-bottom:10px;">Data Makro (FRED)</div>
+      <div class="macro-list">
+        <div class="macro-item"><div class="mac-info"><div class="mac-n">DXY (Dollar Index)</div><div class="mac-d" style="color:var(--muted);font-size:.55rem;">↑ Naik = EUR/USD turun</div></div><div class="mac-v" id="m-dxy-EURUSD">—</div></div>
+        <div class="macro-item"><div class="mac-info"><div class="mac-n">Fed Funds Rate</div><div class="mac-d" style="color:var(--muted);font-size:.55rem;">Suku bunga acuan AS</div></div><div class="mac-v" id="m-fed-EURUSD">—</div></div>
+        <div class="macro-item"><div class="mac-info"><div class="mac-n">Yield Curve 10Y-2Y</div><div class="mac-d" style="color:var(--muted);font-size:.55rem;">Negatif = potensi resesi</div></div><div class="mac-v" id="m-yield-EURUSD">—</div></div>
+      </div></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="c-head"><div class="c-title">Alasan Sinyal — Semua Indikator</div><div id="rc-EURUSD" style="font-size:.6rem;color:var(--muted)">0 faktor</div></div>
+      <div class="reasons" id="rl-EURUSD"><div class="reason r-wait" style="text-align:center;padding:20px;color:var(--muted)">Menunggu data robot...</div></div>
+    </div>
+    <div class="card">
+      <div class="c-head"><div class="c-title">Manajemen Risiko</div></div>
+      <div class="risk-grid">
+        <div class="risk-item"><div class="r-lbl">Ukuran Lot</div><div class="r-val" style="color:var(--accent)" id="r-lot-EURUSD">—</div></div>
+        <div class="risk-item"><div class="r-lbl">Risiko (USD)</div><div class="r-val" style="color:var(--red)" id="r-risk-EURUSD">—</div></div>
+        <div class="risk-item"><div class="r-lbl">Target Profit</div><div class="r-val" style="color:var(--green)" id="r-profit-EURUSD">—</div></div>
+        <div class="risk-item"><div class="r-lbl">SL (Pips)</div><div class="r-val" id="r-pips-EURUSD">—</div></div>
+      </div>
+      <div class="hist-wrap">
+        <table><thead><tr><th>Waktu</th><th>Sinyal</th><th>Conf</th><th>Entry</th><th>TP</th><th>SL</th></tr></thead>
+        <tbody id="ht-EURUSD"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">Belum ada riwayat</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Panel GBPUSD -->
+<div class="panel" id="panel-GBPUSD">
+  <div class="sig-banner wait" id="sb-GBPUSD"><div class="sig-main"><div class="sig-lbl">Sinyal Aktif</div><div class="sig-val wait" id="sv-GBPUSD">WAIT</div><div class="sig-sub" id="ssub-GBPUSD">GBP/USD • M15</div></div><div class="sig-div"></div><div class="sig-stats"><div class="sig-st"><div class="sig-st-l">Entry</div><div class="sig-st-v entry" id="se-GBPUSD">—</div></div><div class="sig-st"><div class="sig-st-l">Take Profit</div><div class="sig-st-v tp" id="stp-GBPUSD">—</div></div><div class="sig-st"><div class="sig-st-l">Stop Loss</div><div class="sig-st-v sl" id="ssl-GBPUSD">—</div></div><div class="sig-st"><div class="sig-st-l">R:R Ratio</div><div class="sig-st-v rr" id="srr-GBPUSD">—</div></div></div><div class="sig-right"><div class="cring"><svg width="100" height="100" viewBox="0 0 100 100"><circle class="cr-bg" cx="50" cy="50" r="42"/><circle class="cr-fill" id="cf-GBPUSD" cx="50" cy="50" r="42" stroke="var(--accent)" stroke-dasharray="264" stroke-dashoffset="264"/></svg><div class="cr-num"><div class="cr-pct" id="cp-GBPUSD">0%</div><div class="cr-lbl">Conf</div></div></div><div class="score-row"><div class="score-lbls"><span style="color:var(--green)" id="sbl-GBPUSD">BUY 0</span><span style="color:var(--red)" id="sbs-GBPUSD">SELL 0</span></div><div class="score-bar"><div class="sb-buy" id="sbb-GBPUSD" style="width:50%"></div><div class="sb-sell" id="sbs2-GBPUSD" style="width:50%"></div></div></div></div></div>
+  <div class="g3"><div class="card"><div class="c-head"><div class="c-title">Indikator Teknikal</div><div class="c-badge">LIVE</div></div><div class="ind-list"><div class="ind-row"><div class="in-name">MA 50</div><div class="in-val" id="i-ma50-GBPUSD">—</div><div class="in-sig neut" id="s-ma50-GBPUSD">—</div></div><div class="ind-row"><div class="in-name">MA 200</div><div class="in-val" id="i-ma200-GBPUSD">—</div><div class="in-sig neut" id="s-ma200-GBPUSD">—</div></div><div class="ind-row"><div class="in-name">EMA 12</div><div class="in-val" id="i-ema12-GBPUSD">—</div><div class="in-sig neut" id="s-ema12-GBPUSD">—</div></div><div class="ind-row"><div class="in-name">EMA 26</div><div class="in-val" id="i-ema26-GBPUSD">—</div><div class="in-sig neut" id="s-ema26-GBPUSD">—</div></div><div class="ind-row"><div class="in-name">MACD Hist</div><div class="in-val" id="i-macd-GBPUSD">—</div><div class="in-sig neut" id="s-macd-GBPUSD">—</div></div><div class="ind-row"><div class="in-name">RSI (14)</div><div class="in-val" id="i-rsi-GBPUSD">—</div><div class="in-sig neut" id="s-rsi-GBPUSD">—</div></div><div class="ind-row"><div class="in-name">Stoch K/D</div><div class="in-val" id="i-stoch-GBPUSD">—</div><div class="in-sig neut" id="s-stoch-GBPUSD">—</div></div><div class="ind-row"><div class="in-name">ATR</div><div class="in-val" id="i-atr-GBPUSD">—</div><div class="in-sig neut">Volatil</div></div><div class="ind-row"><div class="in-name">Volume</div><div class="in-val" id="i-vol-GBPUSD">—</div><div class="in-sig neut" id="s-vol-GBPUSD">—</div></div></div></div><div class="card"><div class="c-head"><div class="c-title">Grafik Harga GBP/USD</div><div class="c-badge" id="lp-GBPUSD">—</div></div><div class="chart-wrap"><canvas id="chart-GBPUSD"></canvas></div><div style="display:flex;justify-content:space-between;margin-top:10px;font-size:.63rem;"><span style="color:var(--red)">BB↑ <span id="bb-u-GBPUSD">—</span></span><span style="color:var(--muted)">Mid <span id="bb-m-GBPUSD">—</span></span><span style="color:var(--green)">BB↓ <span id="bb-l-GBPUSD">—</span></span></div></div><div class="card"><div class="c-head"><div class="c-title">Price Action</div></div><div class="pa-grid"><div class="pa-item"><div class="pa-l">Pola Candle</div><div class="pa-v" id="pa-pat-GBPUSD">—</div></div><div class="pa-item"><div class="pa-l">Trend</div><div class="pa-v" id="pa-trend-GBPUSD">—</div></div><div class="pa-item"><div class="pa-l">Support</div><div class="pa-v" style="color:var(--green)" id="pa-sup-GBPUSD">—</div></div><div class="pa-item"><div class="pa-l">Resistance</div><div class="pa-v" style="color:var(--red)" id="pa-res-GBPUSD">—</div></div></div><div style="margin-top:14px;"><div class="c-title" style="margin-bottom:10px;">Data Makro (FRED)</div><div class="macro-list"><div class="macro-item"><div class="mac-info"><div class="mac-n">DXY</div></div><div class="mac-v" id="m-dxy-GBPUSD">—</div></div><div class="macro-item"><div class="mac-info"><div class="mac-n">Fed Rate</div></div><div class="mac-v" id="m-fed-GBPUSD">—</div></div><div class="macro-item"><div class="mac-info"><div class="mac-n">Yield Curve</div></div><div class="mac-v" id="m-yield-GBPUSD">—</div></div></div></div></div></div>
+  <div class="g2"><div class="card"><div class="c-head"><div class="c-title">Alasan Sinyal</div><div id="rc-GBPUSD" style="font-size:.6rem;color:var(--muted)">0 faktor</div></div><div class="reasons" id="rl-GBPUSD"><div class="reason r-wait" style="text-align:center;padding:20px;color:var(--muted)">Menunggu data robot...</div></div></div><div class="card"><div class="c-head"><div class="c-title">Manajemen Risiko</div></div><div class="risk-grid"><div class="risk-item"><div class="r-lbl">Lot</div><div class="r-val" style="color:var(--accent)" id="r-lot-GBPUSD">—</div></div><div class="risk-item"><div class="r-lbl">Risiko</div><div class="r-val" style="color:var(--red)" id="r-risk-GBPUSD">—</div></div><div class="risk-item"><div class="r-lbl">Target</div><div class="r-val" style="color:var(--green)" id="r-profit-GBPUSD">—</div></div><div class="risk-item"><div class="r-lbl">SL Pips</div><div class="r-val" id="r-pips-GBPUSD">—</div></div></div><div class="hist-wrap"><table><thead><tr><th>Waktu</th><th>Sinyal</th><th>Conf</th><th>Entry</th><th>TP</th><th>SL</th></tr></thead><tbody id="ht-GBPUSD"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">Belum ada riwayat</td></tr></tbody></table></div></div></div>
+</div>
+
+<!-- Panel USDJPY -->
+<div class="panel" id="panel-USDJPY">
+  <div class="sig-banner wait" id="sb-USDJPY"><div class="sig-main"><div class="sig-lbl">Sinyal Aktif</div><div class="sig-val wait" id="sv-USDJPY">WAIT</div><div class="sig-sub" id="ssub-USDJPY">USD/JPY • M15</div></div><div class="sig-div"></div><div class="sig-stats"><div class="sig-st"><div class="sig-st-l">Entry</div><div class="sig-st-v entry" id="se-USDJPY">—</div></div><div class="sig-st"><div class="sig-st-l">Take Profit</div><div class="sig-st-v tp" id="stp-USDJPY">—</div></div><div class="sig-st"><div class="sig-st-l">Stop Loss</div><div class="sig-st-v sl" id="ssl-USDJPY">—</div></div><div class="sig-st"><div class="sig-st-l">R:R Ratio</div><div class="sig-st-v rr" id="srr-USDJPY">—</div></div></div><div class="sig-right"><div class="cring"><svg width="100" height="100" viewBox="0 0 100 100"><circle class="cr-bg" cx="50" cy="50" r="42"/><circle class="cr-fill" id="cf-USDJPY" cx="50" cy="50" r="42" stroke="var(--accent)" stroke-dasharray="264" stroke-dashoffset="264"/></svg><div class="cr-num"><div class="cr-pct" id="cp-USDJPY">0%</div><div class="cr-lbl">Conf</div></div></div><div class="score-row"><div class="score-lbls"><span style="color:var(--green)" id="sbl-USDJPY">BUY 0</span><span style="color:var(--red)" id="sbs-USDJPY">SELL 0</span></div><div class="score-bar"><div class="sb-buy" id="sbb-USDJPY" style="width:50%"></div><div class="sb-sell" id="sbs2-USDJPY" style="width:50%"></div></div></div></div></div>
+  <div class="g3"><div class="card"><div class="c-head"><div class="c-title">Indikator Teknikal</div><div class="c-badge">LIVE</div></div><div class="ind-list"><div class="ind-row"><div class="in-name">MA 50</div><div class="in-val" id="i-ma50-USDJPY">—</div><div class="in-sig neut" id="s-ma50-USDJPY">—</div></div><div class="ind-row"><div class="in-name">MA 200</div><div class="in-val" id="i-ma200-USDJPY">—</div><div class="in-sig neut" id="s-ma200-USDJPY">—</div></div><div class="ind-row"><div class="in-name">EMA 12</div><div class="in-val" id="i-ema12-USDJPY">—</div><div class="in-sig neut" id="s-ema12-USDJPY">—</div></div><div class="ind-row"><div class="in-name">EMA 26</div><div class="in-val" id="i-ema26-USDJPY">—</div><div class="in-sig neut" id="s-ema26-USDJPY">—</div></div><div class="ind-row"><div class="in-name">MACD Hist</div><div class="in-val" id="i-macd-USDJPY">—</div><div class="in-sig neut" id="s-macd-USDJPY">—</div></div><div class="ind-row"><div class="in-name">RSI (14)</div><div class="in-val" id="i-rsi-USDJPY">—</div><div class="in-sig neut" id="s-rsi-USDJPY">—</div></div><div class="ind-row"><div class="in-name">Stoch K/D</div><div class="in-val" id="i-stoch-USDJPY">—</div><div class="in-sig neut" id="s-stoch-USDJPY">—</div></div><div class="ind-row"><div class="in-name">ATR</div><div class="in-val" id="i-atr-USDJPY">—</div><div class="in-sig neut">Volatil</div></div><div class="ind-row"><div class="in-name">Volume</div><div class="in-val" id="i-vol-USDJPY">—</div><div class="in-sig neut" id="s-vol-USDJPY">—</div></div></div></div><div class="card"><div class="c-head"><div class="c-title">Grafik Harga USD/JPY</div><div class="c-badge" id="lp-USDJPY">—</div></div><div class="chart-wrap"><canvas id="chart-USDJPY"></canvas></div><div style="display:flex;justify-content:space-between;margin-top:10px;font-size:.63rem;"><span style="color:var(--red)">BB↑ <span id="bb-u-USDJPY">—</span></span><span style="color:var(--muted)">Mid <span id="bb-m-USDJPY">—</span></span><span style="color:var(--green)">BB↓ <span id="bb-l-USDJPY">—</span></span></div></div><div class="card"><div class="c-head"><div class="c-title">Price Action</div></div><div class="pa-grid"><div class="pa-item"><div class="pa-l">Pola Candle</div><div class="pa-v" id="pa-pat-USDJPY">—</div></div><div class="pa-item"><div class="pa-l">Trend</div><div class="pa-v" id="pa-trend-USDJPY">—</div></div><div class="pa-item"><div class="pa-l">Support</div><div class="pa-v" style="color:var(--green)" id="pa-sup-USDJPY">—</div></div><div class="pa-item"><div class="pa-l">Resistance</div><div class="pa-v" style="color:var(--red)" id="pa-res-USDJPY">—</div></div></div><div style="margin-top:14px;"><div class="c-title" style="margin-bottom:10px;">Data Makro (FRED)</div><div class="macro-list"><div class="macro-item"><div class="mac-info"><div class="mac-n">DXY</div></div><div class="mac-v" id="m-dxy-USDJPY">—</div></div><div class="macro-item"><div class="mac-info"><div class="mac-n">Fed Rate</div></div><div class="mac-v" id="m-fed-USDJPY">—</div></div><div class="macro-item"><div class="mac-info"><div class="mac-n">Yield Curve</div></div><div class="mac-v" id="m-yield-USDJPY">—</div></div></div></div></div></div>
+  <div class="g2"><div class="card"><div class="c-head"><div class="c-title">Alasan Sinyal</div><div id="rc-USDJPY" style="font-size:.6rem;color:var(--muted)">0 faktor</div></div><div class="reasons" id="rl-USDJPY"><div class="reason r-wait" style="text-align:center;padding:20px;color:var(--muted)">Menunggu data robot...</div></div></div><div class="card"><div class="c-head"><div class="c-title">Manajemen Risiko</div></div><div class="risk-grid"><div class="risk-item"><div class="r-lbl">Lot</div><div class="r-val" style="color:var(--accent)" id="r-lot-USDJPY">—</div></div><div class="risk-item"><div class="r-lbl">Risiko</div><div class="r-val" style="color:var(--red)" id="r-risk-USDJPY">—</div></div><div class="risk-item"><div class="r-lbl">Target</div><div class="r-val" style="color:var(--green)" id="r-profit-USDJPY">—</div></div><div class="risk-item"><div class="r-lbl">SL Pips</div><div class="r-val" id="r-pips-USDJPY">—</div></div></div><div class="hist-wrap"><table><thead><tr><th>Waktu</th><th>Sinyal</th><th>Conf</th><th>Entry</th><th>TP</th><th>SL</th></tr></thead><tbody id="ht-USDJPY"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">Belum ada riwayat</td></tr></tbody></table></div></div></div>
+</div>
+
+<!-- Panel XAUUSD -->
+<div class="panel" id="panel-XAUUSD">
+  <div class="sig-banner wait" id="sb-XAUUSD"><div class="sig-main"><div class="sig-lbl">Sinyal Aktif</div><div class="sig-val wait" id="sv-XAUUSD">WAIT</div><div class="sig-sub" id="ssub-XAUUSD">XAU/USD (Gold) • M15</div></div><div class="sig-div"></div><div class="sig-stats"><div class="sig-st"><div class="sig-st-l">Entry</div><div class="sig-st-v entry" id="se-XAUUSD">—</div></div><div class="sig-st"><div class="sig-st-l">Take Profit</div><div class="sig-st-v tp" id="stp-XAUUSD">—</div></div><div class="sig-st"><div class="sig-st-l">Stop Loss</div><div class="sig-st-v sl" id="ssl-XAUUSD">—</div></div><div class="sig-st"><div class="sig-st-l">R:R Ratio</div><div class="sig-st-v rr" id="srr-XAUUSD">—</div></div></div><div class="sig-right"><div class="cring"><svg width="100" height="100" viewBox="0 0 100 100"><circle class="cr-bg" cx="50" cy="50" r="42"/><circle class="cr-fill" id="cf-XAUUSD" cx="50" cy="50" r="42" stroke="var(--yellow)" stroke-dasharray="264" stroke-dashoffset="264"/></svg><div class="cr-num"><div class="cr-pct" id="cp-XAUUSD">0%</div><div class="cr-lbl">Conf</div></div></div><div class="score-row"><div class="score-lbls"><span style="color:var(--green)" id="sbl-XAUUSD">BUY 0</span><span style="color:var(--red)" id="sbs-XAUUSD">SELL 0</span></div><div class="score-bar"><div class="sb-buy" id="sbb-XAUUSD" style="width:50%"></div><div class="sb-sell" id="sbs2-XAUUSD" style="width:50%"></div></div></div></div></div>
+  <div class="g3"><div class="card"><div class="c-head"><div class="c-title">Indikator Teknikal</div><div class="c-badge">LIVE</div></div><div class="ind-list"><div class="ind-row"><div class="in-name">MA 50</div><div class="in-val" id="i-ma50-XAUUSD">—</div><div class="in-sig neut" id="s-ma50-XAUUSD">—</div></div><div class="ind-row"><div class="in-name">MA 200</div><div class="in-val" id="i-ma200-XAUUSD">—</div><div class="in-sig neut" id="s-ma200-XAUUSD">—</div></div><div class="ind-row"><div class="in-name">EMA 12</div><div class="in-val" id="i-ema12-XAUUSD">—</div><div class="in-sig neut" id="s-ema12-XAUUSD">—</div></div><div class="ind-row"><div class="in-name">EMA 26</div><div class="in-val" id="i-ema26-XAUUSD">—</div><div class="in-sig neut" id="s-ema26-XAUUSD">—</div></div><div class="ind-row"><div class="in-name">MACD Hist</div><div class="in-val" id="i-macd-XAUUSD">—</div><div class="in-sig neut" id="s-macd-XAUUSD">—</div></div><div class="ind-row"><div class="in-name">RSI (14)</div><div class="in-val" id="i-rsi-XAUUSD">—</div><div class="in-sig neut" id="s-rsi-XAUUSD">—</div></div><div class="ind-row"><div class="in-name">Stoch K/D</div><div class="in-val" id="i-stoch-XAUUSD">—</div><div class="in-sig neut" id="s-stoch-XAUUSD">—</div></div><div class="ind-row"><div class="in-name">ATR</div><div class="in-val" id="i-atr-XAUUSD">—</div><div class="in-sig neut">Volatil</div></div><div class="ind-row"><div class="in-name">Volume</div><div class="in-val" id="i-vol-XAUUSD">—</div><div class="in-sig neut" id="s-vol-XAUUSD">—</div></div></div></div><div class="card"><div class="c-head"><div class="c-title">Grafik Harga XAU/USD</div><div class="c-badge" id="lp-XAUUSD">—</div></div><div class="chart-wrap"><canvas id="chart-XAUUSD"></canvas></div><div style="display:flex;justify-content:space-between;margin-top:10px;font-size:.63rem;"><span style="color:var(--red)">BB↑ <span id="bb-u-XAUUSD">—</span></span><span style="color:var(--muted)">Mid <span id="bb-m-XAUUSD">—</span></span><span style="color:var(--green)">BB↓ <span id="bb-l-XAUUSD">—</span></span></div></div><div class="card"><div class="c-head"><div class="c-title">Price Action</div></div><div class="pa-grid"><div class="pa-item"><div class="pa-l">Pola Candle</div><div class="pa-v" id="pa-pat-XAUUSD">—</div></div><div class="pa-item"><div class="pa-l">Trend</div><div class="pa-v" id="pa-trend-XAUUSD">—</div></div><div class="pa-item"><div class="pa-l">Support</div><div class="pa-v" style="color:var(--green)" id="pa-sup-XAUUSD">—</div></div><div class="pa-item"><div class="pa-l">Resistance</div><div class="pa-v" style="color:var(--red)" id="pa-res-XAUUSD">—</div></div></div><div style="margin-top:14px;"><div class="c-title" style="margin-bottom:10px;">Data Makro (FRED)</div><div class="macro-list"><div class="macro-item"><div class="mac-info"><div class="mac-n">DXY</div><div class="mac-d" style="color:var(--muted);font-size:.55rem;">↑ Naik = Gold turun</div></div><div class="mac-v" id="m-dxy-XAUUSD">—</div></div><div class="macro-item"><div class="mac-info"><div class="mac-n">Fed Rate</div></div><div class="mac-v" id="m-fed-XAUUSD">—</div></div><div class="macro-item"><div class="mac-info"><div class="mac-n">Yield Curve</div><div class="mac-d" style="color:var(--muted);font-size:.55rem;">Negatif = Gold naik</div></div><div class="mac-v" id="m-yield-XAUUSD">—</div></div></div></div></div></div>
+  <div class="g2"><div class="card"><div class="c-head"><div class="c-title">Alasan Sinyal</div><div id="rc-XAUUSD" style="font-size:.6rem;color:var(--muted)">0 faktor</div></div><div class="reasons" id="rl-XAUUSD"><div class="reason r-wait" style="text-align:center;padding:20px;color:var(--muted)">Menunggu data robot...</div></div></div><div class="card"><div class="c-head"><div class="c-title">Manajemen Risiko</div></div><div class="risk-grid"><div class="risk-item"><div class="r-lbl">Lot</div><div class="r-val" style="color:var(--accent)" id="r-lot-XAUUSD">—</div></div><div class="risk-item"><div class="r-lbl">Risiko</div><div class="r-val" style="color:var(--red)" id="r-risk-XAUUSD">—</div></div><div class="risk-item"><div class="r-lbl">Target</div><div class="r-val" style="color:var(--green)" id="r-profit-XAUUSD">—</div></div><div class="risk-item"><div class="r-lbl">SL Pips</div><div class="r-val" id="r-pips-XAUUSD">—</div></div></div><div class="hist-wrap"><table><thead><tr><th>Waktu</th><th>Sinyal</th><th>Conf</th><th>Entry</th><th>TP</th><th>SL</th></tr></thead><tbody id="ht-XAUUSD"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">Belum ada riwayat</td></tr></tbody></table></div></div></div>
+</div>
+
+</div><!-- /panels -->
+
+<!-- LOG -->
+<div class="card" style="margin-top:0">
+  <div class="c-head"><div class="c-title">Activity Log</div><div class="c-badge">REAL-TIME</div></div>
+  <div class="log-box" id="logBox">
+    <span class="lts">[system]</span> Dashboard v3.0 dimulai — 4 pair mode<br>
+    <span class="lts">[info]</span> Menunggu koneksi ke <span class="lwarn">server.py</span>...<br>
+    <span class="lts">[tip]</span> Jalankan: <span class="lwarn">python server.py</span> lalu <span class="lwarn">python forex_robot_v3.py</span><br>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+const PAIRS = ['EURUSD','GBPUSD','USDJPY','XAUUSD'];
+let currentPair = 'EURUSD';
+let priceHistories = {EURUSD:[],GBPUSD:[],USDJPY:[],XAUUSD:[]};
+
+// ── TAB SWITCHING ──
+function switchPair(pair) {
+  currentPair = pair;
+  PAIRS.forEach(p => {
+    document.getElementById('panel-'+p).classList.toggle('active', p===pair);
+    document.getElementById('tab-'+p).classList.toggle('active', p===pair);
+  });
+  drawChart(pair);
+}
+
+// ── UPDATE ONE PAIR ──
+function updatePair(pk, d) {
+  if(!d) return;
+  const sig = (d.signal||'WAIT').toUpperCase();
+  const ind = d.indicators||{};
+  const pa  = d.price_action||{};
+  const risk = d.risk||{};
+  const macro = d._macro||{};
+  const close = ind.close;
+
+  // Summary tab
+  const tabEl = document.getElementById('tab-'+pk);
+  if(tabEl) { tabEl.className = 'sum-card'+(pk===currentPair?' active':'')+(sig==='BUY'?' buy':sig==='SELL'?' sell':''); }
+  setText('sp-'+pk, close ? fmtPrice(close,pk) : '—');
+  const ssEl = document.getElementById('ss-'+pk);
+  if(ssEl) { ssEl.textContent=sig; ssEl.className='sum-sig '+sig.toLowerCase(); }
+  setText('sc-'+pk, (d.confidence||0)+'%');
+
+  // Signal banner
+  const banner = document.getElementById('sb-'+pk);
+  if(banner) banner.className = 'sig-banner '+sig.toLowerCase();
+  const sv = document.getElementById('sv-'+pk);
+  if(sv) { sv.textContent=sig; sv.className='sig-val '+sig.toLowerCase(); }
+  setText('ssub-'+pk, (d.pair||pk)+' • M15 • '+(d.timestamp||'').slice(11,16));
+  setText('se-'+pk,  d.entry ? fmtPrice(d.entry,pk):'—');
+  setText('stp-'+pk, d.tp    ? fmtPrice(d.tp,pk):'—');
+  setText('ssl-'+pk, d.sl    ? fmtPrice(d.sl,pk):'—');
+  setText('srr-'+pk, d.rr    ? '1:'+d.rr:'—');
+
+  // Confidence ring
+  const conf = d.confidence||0;
+  const circum = 264;
+  const cf = document.getElementById('cf-'+pk);
+  if(cf) {
+    cf.style.strokeDashoffset = circum - (conf/100)*circum;
+    cf.style.stroke = sig==='BUY'?'var(--green)':sig==='SELL'?'var(--red)':'var(--yellow)';
+  }
+  const cp = document.getElementById('cp-'+pk);
+  if(cp) { cp.textContent=conf+'%'; cp.style.color=sig==='BUY'?'var(--green)':sig==='SELL'?'var(--red)':'var(--yellow)'; }
+
+  // Score bar
+  const bs=d.buy_score||0, ss2=d.sell_score||0, tot=bs+ss2||1;
+  setText('sbl-'+pk, 'BUY '+bs); setText('sbs-'+pk, 'SELL '+ss2);
+  const sbb=document.getElementById('sbb-'+pk), sbs2=document.getElementById('sbs2-'+pk);
+  if(sbb) sbb.style.width=((bs/tot)*100)+'%';
+  if(sbs2) sbs2.style.width=((ss2/tot)*100)+'%';
+
+  // Indicators
+  setText('i-ma50-'+pk,  ind.ma50  ? fmtPrice(ind.ma50,pk):'—');
+  setText('i-ma200-'+pk, ind.ma200 ? fmtPrice(ind.ma200,pk):'—');
+  setText('i-ema12-'+pk, ind.ema12 ? fmtPrice(ind.ema12,pk):'—');
+  setText('i-ema26-'+pk, ind.ema26 ? fmtPrice(ind.ema26,pk):'—');
+  setText('i-macd-'+pk,  ind.macd_hist!=null?(ind.macd_hist>0?'+':'')+ind.macd_hist.toFixed(5):'—');
+  setText('i-rsi-'+pk,   ind.rsi!=null?ind.rsi.toFixed(1)+'':'—');
+  setText('i-stoch-'+pk, (ind.stoch_k&&ind.stoch_d)?ind.stoch_k.toFixed(1)+'/'+ind.stoch_d.toFixed(1):'—');
+  setText('i-atr-'+pk,   ind.atr ? ind.atr.toFixed(pk==='XAUUSD'?2:5):'—');
+  setText('i-vol-'+pk,   ind.vol_ratio ? ind.vol_ratio.toFixed(2)+'x':'—');
+  setText('lp-'+pk, close?fmtPrice(close,pk):'—');
+  setText('bb-u-'+pk, ind.bb_upper?fmtPrice(ind.bb_upper,pk):'—');
+  setText('bb-m-'+pk, ind.bb_mid  ?fmtPrice(ind.bb_mid,pk):'—');
+  setText('bb-l-'+pk, ind.bb_lower?fmtPrice(ind.bb_lower,pk):'—');
+
+  // Indicator signals
+  if(close&&ind.ma50)  setSig('s-ma50-'+pk,  close>ind.ma50?'bull':'bear', close>ind.ma50?'Bullish':'Bearish');
+  if(close&&ind.ma200) setSig('s-ma200-'+pk, close>ind.ma200?'bull':'bear', close>ind.ma200?'Bullish':'Bearish');
+  if(ind.ema12&&ind.ema26) {
+    setSig('s-ema12-'+pk, ind.ema12>ind.ema26?'bull':'bear', ind.ema12>ind.ema26?'↑ Naik':'↓ Turun');
+    setSig('s-ema26-'+pk, ind.ema12>ind.ema26?'bull':'bear', ind.ema12>ind.ema26?'↑':'↓');
+  }
+  if(ind.macd_hist!=null) setSig('s-macd-'+pk, ind.macd_hist>0?'bull':'bear', ind.macd_hist>0?'Bullish':'Bearish');
+  if(ind.rsi) setSig('s-rsi-'+pk, ind.rsi<30?'bull':ind.rsi>70?'bear':'neut', ind.rsi<30?'Oversold':ind.rsi>70?'Overbought':'Netral');
+  if(ind.stoch_k) setSig('s-stoch-'+pk, ind.stoch_k<20?'bull':ind.stoch_k>80?'bear':'neut', ind.stoch_k<20?'Oversold':ind.stoch_k>80?'Overbought':'Netral');
+  if(ind.vol_ratio) setSig('s-vol-'+pk, ind.vol_ratio>1.5?'bull':ind.vol_ratio<0.5?'bear':'neut', ind.vol_ratio>1.5?'Tinggi':ind.vol_ratio<0.5?'Rendah':'Normal');
+
+  // Price history
+  if(d.price_history && d.price_history.length > 0)
+    priceHistories[pk] = d.price_history.slice(-150);
+  else if(close)
+    priceHistories[pk].push({time:d.timestamp,price:close});
+  if(pk===currentPair) drawChart(pk);
+
+  // Price action
+  setText('pa-pat-'+pk,   pa.pattern||'—');
+  setText('pa-trend-'+pk, pa.trend||'—');
+  setText('pa-sup-'+pk,   pa.support?fmtPrice(pa.support,pk):'—');
+  setText('pa-res-'+pk,   pa.resistance?fmtPrice(pa.resistance,pk):'—');
+
+  // Macro
+  const m = macro;
+  setText('m-dxy-'+pk,   m.DXY      ? m.DXY.toFixed(2)      :'—');
+  setText('m-fed-'+pk,   m.FEDFUNDS ? m.FEDFUNDS.toFixed(2)+'%':'—');
+  const yEl = document.getElementById('m-yield-'+pk);
+  if(yEl) {
+    yEl.textContent = m.T10Y2Y!=null ? m.T10Y2Y.toFixed(2) : '—';
+    if(m.T10Y2Y!=null) yEl.style.color = m.T10Y2Y<0?'var(--red)':'var(--green)';
+  }
+
+  // Reasons
+  const reasons = d.reasons||[];
+  setText('rc-'+pk, reasons.length+' faktor');
+  const rl = document.getElementById('rl-'+pk);
+  if(rl && reasons.length>0) {
+    rl.innerHTML = reasons.map(r=>{
+      const cls = r.startsWith('✅')?'r-buy':r.startsWith('🔻')?'r-sell':r.startsWith('⚠')?'r-warn':'r-wait';
+      return `<div class="reason ${cls}">${r}</div>`;
+    }).join('');
+  }
+
+  // Risk
+  setText('r-lot-'+pk,    risk.lot?risk.lot:'—');
+  setText('r-risk-'+pk,   risk.risk_usd?'$'+risk.risk_usd:'—');
+  setText('r-profit-'+pk, risk.potensi_profit?'$'+risk.potensi_profit:'—');
+  setText('r-pips-'+pk,   risk.sl_pips?risk.sl_pips+' pip':'—');
+
+  // History
+  if(d.history && d.history.length>0) {
+    const rows = d.history.slice(0,6).map(h=>`
+      <tr>
+        <td style="color:var(--muted)">${(h.timestamp||'').slice(11,16)}</td>
+        <td class="${h.signal==='BUY'?'hbuy':'hsell'}">${h.signal||'—'}</td>
+        <td>${h.confidence||0}%</td>
+        <td>${h.entry?fmtPrice(h.entry,pk):'—'}</td>
+        <td style="color:var(--green)">${h.tp?fmtPrice(h.tp,pk):'—'}</td>
+        <td style="color:var(--red)">${h.sl?fmtPrice(h.sl,pk):'—'}</td>
+      </tr>`).join('');
+    const ht = document.getElementById('ht-'+pk);
+    if(ht) ht.innerHTML = rows;
+  }
+}
+
+// ── FORMAT PRICE per pair ──
+function fmtPrice(v, pk) {
+  if(v==null) return '—';
+  if(pk==='USDJPY') return parseFloat(v).toFixed(3);
+  if(pk==='XAUUSD') return parseFloat(v).toFixed(2);
+  return parseFloat(v).toFixed(5);
+}
+
+// ── CHART ──
+function drawChart(pk) {
+  const canvas = document.getElementById('chart-'+pk);
+  if(!canvas) return;
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.clientWidth||400;
+  canvas.height = wrap.clientHeight||150;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const hist = priceHistories[pk]||[];
+  if(hist.length < 2) return;
+
+  const W=canvas.width, H=canvas.height;
+  const prices = hist.map(p=>p.price);
+  const min=Math.min(...prices), max=Math.max(...prices);
+  const range=(max-min)||0.001;
+  const pad=6;
+  const x = i => pad+(i/(prices.length-1))*(W-pad*2);
+  const y = v => H-pad-((v-min)/range)*(H-pad*2);
+
+  const isGold = pk==='XAUUSD';
+  const lineColor = isGold?'#ffc940':'#00d4ff';
+  const gradTop   = isGold?'rgba(255,201,64,.18)':'rgba(0,212,255,.18)';
+
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,gradTop); grad.addColorStop(1,'rgba(0,0,0,0)');
+
+  ctx.beginPath();
+  prices.forEach((v,i)=>i===0?ctx.moveTo(x(i),y(v)):ctx.lineTo(x(i),y(v)));
+  ctx.strokeStyle=lineColor; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.lineTo(x(prices.length-1),H); ctx.lineTo(x(0),H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+
+  // Last dot
+  const lx=x(prices.length-1), ly=y(prices[prices.length-1]);
+  ctx.beginPath(); ctx.arc(lx,ly,4,0,Math.PI*2); ctx.fillStyle=lineColor; ctx.fill();
+  ctx.beginPath(); ctx.arc(lx,ly,7,0,Math.PI*2); ctx.fillStyle=isGold?'rgba(255,201,64,.2)':'rgba(0,212,255,.2)'; ctx.fill();
+}
+
+// ── HELPERS ──
+function setText(id, val) { const e=document.getElementById(id); if(e) e.textContent=val; }
+function setSig(id, cls, lbl) { const e=document.getElementById(id); if(e){e.className='in-sig '+cls;e.textContent=lbl;} }
+
+function addLog(msg) {
+  const box=document.getElementById('logBox');
+  const ts=new Date().toLocaleTimeString('id-ID');
+  box.innerHTML += `<br><span class="lts">[${ts}]</span> ${msg}`;
+  box.scrollTop = box.scrollHeight;
+  const lines=box.innerHTML.split('<br>');
+  if(lines.length>100) box.innerHTML=lines.slice(-100).join('<br>');
+}
+
+// ── WEBSOCKET ──
+let ws=null, retries=0;
+function connectWS() {
+  const dot=document.getElementById('wsDot'), lbl=document.getElementById('wsLbl');
+  try {
+    ws = new WebSocket('ws://localhost:8765');
+    ws.onopen = ()=>{ retries=0; dot.classList.remove('off'); lbl.textContent='LIVE'; addLog('<span class="lok">✅ Terhubung ke robot!</span>'); };
+    ws.onmessage = (e)=>{
+      try {
+        const data = JSON.parse(e.data);
+        document.getElementById('updTime').textContent = 'Update: '+new Date().toLocaleTimeString('id-ID');
+        PAIRS.forEach(pk=>{ if(data[pk]) { data[pk]._macro=data._macro||{}; updatePair(pk,data[pk]); } });
+        const sigs = PAIRS.filter(pk=>data[pk]&&data[pk].signal!=='WAIT').map(pk=>`<span class="l${data[pk].signal.toLowerCase()}">${pk}:${data[pk].signal}</span>`);
+        if(sigs.length) addLog('Sinyal: '+sigs.join(' | '));
+      } catch(err){ addLog('<span class="lwarn">Parse error: '+err.message+'</span>'); }
+    };
+    ws.onclose = ()=>{ dot.classList.add('off'); lbl.textContent='OFFLINE'; retries++; const d=Math.min(retries*3000,15000); addLog(`<span class="lwarn">Reconnect dalam ${d/1000}s...</span>`); setTimeout(connectWS,d); };
+    ws.onerror = ()=>{ dot.classList.add('off'); lbl.textContent='ERROR'; };
+  } catch(e){ setTimeout(connectWS,5000); }
+}
+
+// Fallback polling
+setInterval(()=>{
+  if(!ws||ws.readyState!==WebSocket.OPEN){
+    fetch('http://localhost:5000/latest').then(r=>r.json()).then(data=>{
+      PAIRS.forEach(pk=>{ if(data[pk]){data[pk]._macro=data._macro||{};updatePair(pk,data[pk]);} });
+    }).catch(()=>{});
+  }
+},15000);
+
+window.addEventListener('resize',()=>drawChart(currentPair));
+window.addEventListener('load',()=>{ connectWS(); PAIRS.forEach(pk=>drawChart(pk)); });
+</script>
+</body>
+</html>
